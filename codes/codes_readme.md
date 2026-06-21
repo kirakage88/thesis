@@ -250,3 +250,100 @@ core set:
 * ESP-NOW data struct must match exactly between sender and receiver
 * Supabase receiver uses flag-based ISR safety (no HTTP in callback)
 
+---
+
+## Python ML Environment
+
+The `python/machine learning/` directory contains the ML classification
+experiments (Perceptron, Logistic Regression, SVM, Decision Tree, Random
+Forest, KNN). These run on your local machine, not on ESP32.
+
+### Prerequisites
+
+- Python 3.11+ (3.14 recommended)
+- `pip` (bundled with Python)
+- Git (for version control)
+
+### Virtual Environment Setup
+
+```bash
+# Navigate to the ML directory
+cd "/d/School/1 Projects/thesis/codes/python/machine learning"
+
+# Create virtual environment
+python -m venv .venv
+
+# Activate it
+# PowerShell:
+.venv\Scripts\Activate.ps1
+# Git Bash / MSYS:
+source .venv/Scripts/activate
+
+# Install dependencies
+pip install numpy matplotlib scikit-learn pandas
+
+# Verify
+python -c "import numpy, matplotlib, sklearn, pandas; print('All OK')"
+```
+
+### Dependencies
+
+| Package | Purpose | Used In |
+|---------|---------|---------|
+| `numpy` | Numerical arrays | All scripts |
+| `matplotlib` | Plotting decision regions | All scripts, `helper.py` |
+| `scikit-learn` | ML models, datasets, metrics, preprocessing | All scripts |
+| `pandas` | Data loading / preprocessing | `pre-processing/` |
+
+### PyTorch (optional — only if you add deep learning experiments)
+
+```bash
+# CPU-only (default PyPI)
+pip install torch
+
+# CUDA 13.0 (NVIDIA GPU)
+pip install torch --index-url https://download.pytorch.org/whl/cu130
+```
+
+Verify CUDA:
+```python
+import torch
+print(torch.cuda.is_available())   # True if GPU detected
+print(torch.version.cuda)           # e.g. 13.0
+```
+
+### Project Structure
+
+```
+machine learning/
+├── .venv/                    # Virtual environment (git-ignored)
+├── .gitignore
+├── helper.py                 # plot_decision_regions() shared utility
+├── 0 perceptron.py
+├── 1 logistic_regression.py
+├── 2 SVM.py
+├── 3 dec_tree.py
+├── 4 random_forest.py
+├── 5 knn_classifier.py
+└── pre-processing/
+    ├── 6 missing values.py
+    ├── 7 handling_categorical.py
+    └── 8 feature_extraction
+```
+
+### .gitignore
+
+Make sure `.gitignore` includes:
+
+```
+.venv/
+__pycache__/
+*.pyc
+```
+
+### VS Code Setup
+
+1. Open the `machine learning/` folder in VS Code
+2. `Ctrl+Shift+P` → "Python: Select Interpreter" → choose `.venv`
+3. Terminal auto-activates the venv
+
