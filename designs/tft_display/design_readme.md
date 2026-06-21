@@ -34,11 +34,11 @@ Defined as `#define` macros in a shared `colors.h` (zero RAM, no duplication).
 
 |Name|Hex|RGB565|Role|
 |-|-|-|-|
-|`COL\_BRIGHT\_SNOW`|`#f8f8f8`|`0xFFDF`|Background / text on dark|
-|`COL\_SILVER`|`#cccccc`|`0xCE79`|Borders, dividers|
-|`COL\_SILVER\_2`|`#aeaeae`|`0xAD75`|Disabled states|
-|`COL\_IRON\_GREY`|`#474747`|`0x4228`|Primary text, dark bgs|
-|`COL\_IRON\_GREY\_2`|`#4b5660`|`0x4AAC`|Accent, headers|
+|`COL\\\\\\\_BRIGHT\\\\\\\_SNOW`|`#f8f8f8`|`0xFFDF`|Background / text on dark|
+|`COL\\\\\\\_SILVER`|`#cccccc`|`0xCE79`|Borders, dividers|
+|`COL\\\\\\\_SILVER\\\\\\\_2`|`#aeaeae`|`0xAD75`|Disabled states|
+|`COL\\\\\\\_IRON\\\\\\\_GREY`|`#474747`|`0x4228`|Primary text, dark bgs|
+|`COL\\\\\\\_IRON\\\\\\\_GREY\\\\\\\_2`|`#4b5660`|`0x4AAC`|Accent, headers|
 
 #### 
 
@@ -87,7 +87,7 @@ Load via `loadFont()` / `unloadFont()` per screen.
 |Emphasis|Montserrat Regular|13px|Labels, active states, button text|
 |Body|Montserrat Light|13px|Descriptions, list items, secondary|
 
-Custom fonts directory: `custom\_tft\_fonts/fontsketch/`
+Custom fonts directory: `custom\\\\\\\_tft\\\\\\\_fonts/fontsketch/`
 
 \---
 
@@ -109,7 +109,7 @@ that expands a full-screen menu.
 * **Bottom bar** — quick access to most-used screens (Devices, Units)
 * **Center arrow** — opens full-screen menu with ALL destinations
 * Bar persists on every page; active tab highlighted (accent color)
-* Reserve bar height (\~40–50px): `CONTENT\_HEIGHT = TFT\_HEIGHT - BAR\_HEIGHT`
+* Reserve bar height (\~40–50px): `CONTENT\\\\\\\_HEIGHT = TFT\\\\\\\_HEIGHT - BAR\\\\\\\_HEIGHT`
 * No back arrow on Main Menu (it is the root)
 
 \---
@@ -211,9 +211,9 @@ Other design files:
 
 |File|Purpose|
 |-|-|
-|`home\_page.png`|Main menu mockup|
-|`init\_page.png`|Initialization page mockup|
-|`palette\_shades.png`|Full palette shade reference|
+|`home\\\\\\\_page.png`|Main menu mockup|
+|`init\\\\\\\_page.png`|Initialization page mockup|
+|`palette\\\\\\\_shades.png`|Full palette shade reference|
 |`pureref.pur`|PureRef design reference|
 |`tft.af`|Affinity Designer file|
 
@@ -232,7 +232,7 @@ Other design files:
 * **Screen manager** — owns active screen, dispatches touch, handles transitions
 * **Custom fonts** — VLW in PROGMEM (`.h` arrays), 4 fonts loaded on demand
 * **Color scheme** — single `#define` block in `colors.h`, shared across all screens
-* **Helper functions** — `helper\_functions.h/.cpp` (shared `tft` via `extern`)
+* **Helper functions** — `helper\\\\\\\_functions.h/.cpp` (shared `tft` via `extern`)
 e.g. `drawImageCenter`, `drawIconCenter`, color/draw helpers
 
 \---
