@@ -142,4 +142,87 @@ python 0 perceptron.py
 
 ---
 
+---
+
+## 🛠️ Installation
+
+**Git**
+- Linux (Debian/Ubuntu): `sudo apt install git`
+- macOS: `brew install git` or download from [git-scm.com](https://git-scm.com)
+- ChromeOS: enable Linux (Crostini), then `sudo apt install git`
+- Windows: download from [git-scm.com](https://git-scm.com)
+- Verify: `git --version`
+
+---
+
+## ⚙️ Git Configuration
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "your_email@example.com"
+git config --global init.defaultBranch main
+```
+
+- If using GitHub's privacy feature, use the provided private email: `username@users.noreply.github.com`
+- Verify: `git config --global user.name` and `git config --global user.email`
+- **macOS:** ignore `.DS_Store` files globally to prevent metadata files from appearing in commits:
+
+```bash
+echo ".DS_Store" >> ~/.gitignore_global
+git config --global core.excludesFile ~/.gitignore_global
+```
+
+---
+
+## 🌐 GitHub Account Setup
+
+- Use a **real email** — required for contribution tracking
+- Enable privacy settings: keep email private, block CLI pushes that expose personal email
+- Enable **2FA** using a TOTP app (Google Authenticator, Authy, etc.)
+  - ⚠️ **Warning:** losing 2FA credentials **and** recovery codes means permanent account lockout — GitHub Support cannot restore access
+
+---
+
+## 🔑 SSH Key Authentication
+
+Check for an existing key:
+
+```bash
+ls ~/.ssh/id_ed25519.pub
+```
+
+Generate a new Ed25519 key:
+
+```bash
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
+
+- Press Enter to accept the default location
+- Optional: set a passphrase for extra security
+
+Copy the public key:
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+It starts with `ssh-ed25519` and ends with `username@hostname`.
+
+**Add to GitHub:**
+1. Settings → SSH and GPG keys → New SSH Key
+2. Paste the public key as an **Authentication Key**
+
+Test the connection:
+
+```bash
+ssh -T git@github.com
+```
+
+- Success: `"Hi username! You've successfully authenticated, but GitHub does not provide shell access."`
+- Failure: retry or ask for help in TOP Discord
+
+Multiple SSH keys can be linked to one GitHub account — one per machine.
+
+---
+
 *Built with ☕ and late nights by **Kira (JRon)** · JPSME-XUC · Xavier University*
