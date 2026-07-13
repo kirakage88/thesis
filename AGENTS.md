@@ -20,16 +20,36 @@ ESP32 + sensors + ESP-NOW + TFT + Supabase + scikit-learn classification.
 
 Probe A/B/C DeviceAddress arrays hardcoded in each sketch (OneWire GPIO10).
 
-### ESP-NOW (sender ↔ receiver)
+### MPU6050 calibration offsets (hardcoded in accel_sender)
 
-Sender: `codes/testing/now_ambient_sender/`  |  Receiver: `codes/testing/now_receiver_supabase/`
+From `calibration/mpu6050_raw_20260713_152545.csv`:
+```
+AX_BIAS = -0.005124, AY_BIAS = -0.265409, AZ_BIAS = 0.379842
+```
 
-- **Data struct must be byte-identical** between boards (`EspNowData`: `temp`, `humid`, `counter`, `a_temp`, `b_temp`, `c_temp`).
-- Sender scans for SSID `PLDTHOMEFIBRd2228` to match channel before ESP-NOW init; hardcoded channel 11 as fallback.
-- Receiver MAC (`0x14:63:93:8C:FC:78`) hardcoded in sender.
-- Receiver WiFi credentials + Supabase URL/key hardcoded in receiver sketch.
-- ESP-NOW receive callback must **only set a flag** (`volatile bool newDataReady`). HTTP POST runs in `loop()` — never in ISR.
+### ESP-NOW — prototyping system (3 boards)
+
+Sketches: `codes/prototyping/{accel_sender, ambient_sender, receiver}/`
+
+- **Shared struct** (`EspNowPacket`): `uint8_t type` (0=accel, 1=ambient) + `float data[6]`
+- **MAC addresses:**
+  - Accel sender: `E0:72:A1:72:22:94`
+  - Ambient sender: `E0:72:A1:72:29:00`
+  - Receiver: `E0:72:A1:6F:F8:6C`
+- Senders scan for SSID `PLDTHOMEFIBRd2228` for channel; hardcoded channel 11 as fallback.
+- **ESP-NOW receive callback must only set a flag** (`volatile bool newDataReady`). Processing runs in `loop()` — never in ISR.
+- Send rate: 3 seconds. Receiver prints both data streams to Serial.
+- Flash order (1 USB cable): flash senders first (unplug between), receiver last (keep plugged for serial monitoring).
+- See `codes/prototyping/PLAN.md` for full architecture.
+
+### ESP-NOW — testing sketches
+
+`codes/testing/now_ambient_sender/` → `codes/testing/now_receiver_supabase/`
+
+- Uses older `EspNowData` struct (`temp`, `humid`, `counter`, `a_temp`, `b_temp`, `c_temp`) — no `type` field.
+- Receiver MAC (older): `0x14:63:93:8C:FC:78`.
 - Supabase table: `readings`, columns: `temperature`, `humidity`, `counter`, `a_temp`, `b_temp`, `c_temp`.
+- Receiver WiFi credentials + Supabase URL/key hardcoded.
 
 ### TFT display
 
@@ -40,43 +60,45 @@ Sketch: `codes/prototyping/tft_complete/` (ST7789 240×320, SPI)
 - Fonts: VLW format, stored as `.h` PROGMEM arrays in `fonts/`, loaded via `loadFont()`.
 - Color palette: `#define` macros in the sketch (light/dark Iron Grey modes).
 
-## Python ML
+## Python
 
 ```
 cd "codes/python/machine learning"
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r ../requirements.txt
-python "0 perceptron.py"
 ```
 
-- Requires **Python 3.11+**; deps pinned in `codes/python/requirements.txt` (numpy, matplotlib, scikit-learn, pandas, torch). CUDA torch is unused by current scripts.
+- Requires **Python 3.11+**; deps pinned in `codes/python/requirements.txt` (numpy, matplotlib, scikit-learn, pandas, pyserial, torch). CUDA torch is unused by current scripts.
 - `helper.py` provides `plot_decision_regions()` shared by all 6 classifier scripts (0–5).
-- `pre-processing/` has 3 data-wrangling scripts/dirs (`6 missing values.py`, `7 handling_categorical.py`, `8 feature_extraction`).
+- `capture_mpu6050.py` — serial capture tool for MPU6050 calibration: collects 200 raw samples, saves to timestamped CSV, prints calibration results.
+- `pre-processing/` has 3 scripts (`6 missing values.py`, `7 handling_categorical.py`, `8 feature_extraction`).
 
 ## Structure
 
 ```
 thesis/
 ├── codes/
-│   ├── prototyping/           # 3 final firmware sketches
-│   │   ├── ambient_module_final/  # BME280 + 3×DS18B20 (sensor fusion, no wireless)
-│   │   ├── mpu6050_calibration/  # MPU6050 gyro/accel bias calibration
+│   ├── prototyping/               # Final + ESP-NOW sketches
+│   │   ├── accel_sender/          # MPU6050 → ESP-NOW (type=0)
+│   │   ├── ambient_sender/        # BME280+DS18B20 → ESP-NOW (type=1)
+│   │   ├── receiver/              # Receives both → Serial
+│   │   ├── ambient_module_final/  # BME280 + 3×DS18B20 (sensor-only, no wireless)
+│   │   ├── mpu6050_calibration/   # MPU6050 bias calibration
 │   │   ├── tft_complete/          # ST7789 TFT UI
-│   │   └── libraries/             # Dependencies
-│   ├── testing/               # 22 standalone component sketches
-│   │   ├── now_ambient_sender/    # ESP-NOW sender (sensor → receiver)
+│   │   ├── libraries/             # Dependencies
+│   │   └── PLAN.md                # ESP-NOW architecture plan
+│   ├── testing/                   # 22 standalone component sketches
+│   │   ├── now_ambient_sender/    # ESP-NOW sender (older, → Supabase)
 │   │   ├── now_receiver_supabase/ # ESP-NOW receiver → Supabase
-│   │   ├── now_sender/ now_receiver/ now_sender_web/ now_receiver_web/
-│   │   ├── BME280/ probes/ PROBEA/ PROBEB/ PROBEC/
-│   │   ├── tft_display/ tft_touch/ tft_custom_fonts/ tft_image/ tft_ui_demo/ tft_gemini/
-│   │   ├── supabase/ web_server/ mac_address/ i2c_scanner/ mpu6050/
-│   │   └── libraries/
+│   │   └── ...                    # BME280, probes, tft_*, supabase, etc.
 │   └── python/
-│       ├── machine learning/  # 6 classifiers + pre-processing/
-│       └── deep learning/     # empty
-├── designs/  # TFT mockups, VLW fonts, palette, logos
-└── schematics/  # Fritzing .fzz files
+│       ├── machine learning/      # 6 classifiers + pre-processing/
+│       │   └── capture_mpu6050.py
+│       └── deep learning/
+├── calibration/                   # MPU6050 raw CSV captures
+├── designs/                       # TFT mockups, fonts, palette, logos
+└── schematics/                    # Fritzing .fzz files
 ```
 
 ## What is NOT here
