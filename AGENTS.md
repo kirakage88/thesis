@@ -8,6 +8,7 @@ ESP32 + sensors + ESP-NOW + TFT + Supabase + scikit-learn classification.
 - All sketches target **ESP32** (Arduino framework), opened via **Arduino IDE**.
 - **No build system.** Libraries live in `codes/prototyping/libraries/` and `codes/testing/libraries/` — copy or symlink into `Arduino/libraries/`.
 - Serial monitor baud: **115200** (set in every sketch).
+- BME280 I2C address: **`0x76`** (not the Adafruit default `0x77`).
 
 ### Calibration factors (duplicated across all sensor sketches)
 
@@ -31,6 +32,7 @@ AX_BIAS = -0.005124, AY_BIAS = -0.265409, AZ_BIAS = 0.379842
 
 Sketches: `codes/prototyping/{accel_sender, ambient_sender, receiver}/`
 
+- **`prototyping/now_ambient_sender/` and `prototyping/now_receiver_supabase/` are empty dirs.** The actual sketches live in `codes/testing/` only.
 - **Shared struct** (`EspNowPacket`): `uint8_t type` (0=accel, 1=ambient) + `float data[6]`
 - **MAC addresses:**
   - Accel sender: `E0:72:A1:72:22:94`
@@ -40,7 +42,7 @@ Sketches: `codes/prototyping/{accel_sender, ambient_sender, receiver}/`
 - **ESP-NOW receive callback must only set a flag** (`volatile bool newDataReady`). Processing runs in `loop()` — never in ISR.
 - Send rate: 3 seconds. Receiver prints both data streams to Serial.
 - Flash order (1 USB cable): flash senders first (unplug between), receiver last (keep plugged for serial monitoring).
-- See `codes/prototyping/PLAN.md` for full architecture.
+- See `codes/prototyping/PLAN.md` for full architecture. **Note:** PLAN.md lists an older receiver MAC (`0x14:63:93:8C:FC:78`); the code above is the source of truth.
 
 ### ESP-NOW — testing sketches
 
@@ -50,6 +52,7 @@ Sketches: `codes/prototyping/{accel_sender, ambient_sender, receiver}/`
 - Receiver MAC (older): `0x14:63:93:8C:FC:78`.
 - Supabase table: `readings`, columns: `temperature`, `humidity`, `counter`, `a_temp`, `b_temp`, `c_temp`.
 - Receiver WiFi credentials + Supabase URL/key hardcoded.
+- See `codes/codes_readme.md` for per-sketch details on all 22 testing sketches.
 
 ### TFT display
 
