@@ -1,13 +1,16 @@
 # AGENTS.md
 
 Bachelor's thesis — Predictive Maintenance for Coiled Evaporators.
-ESP32 + sensors + ESP-NOW + TFT + Supabase + scikit-learn classification.
+ESP32 + sensors + ESP-NOW + TFT + Supabase + ML classification/unsupervised anomaly detection.
+
+**Architecture decision (2026-07):** Unsupervised anomaly detection is the primary approach (not supervised classification). The 6 classifier scripts in `codes/python/machine learning/` are early experiments. See `thesis_roadmap.md` (779 lines) for the full 10-phase project plan, architecture rationale, and validation strategy. That file is the authoritative project plan — every task in this repo maps to it.
 
 ## Firmware (Arduino / ESP32)
 
 - All sketches target **ESP32** (Arduino framework), opened via **Arduino IDE**.
 - **No build system.** Libraries live in `codes/prototyping/libraries/` and `codes/testing/libraries/` — copy or symlink into `Arduino/libraries/`.
 - Serial monitor baud: **115200** (set in every sketch).
+- BME280 I2C address: **`0x76`** (not the Adafruit default `0x77`).
 
 ### Calibration factors (duplicated across all sensor sketches)
 
@@ -31,6 +34,7 @@ AX_BIAS = -0.005124, AY_BIAS = -0.265409, AZ_BIAS = 0.379842
 
 Sketches: `codes/prototyping/{accel_sender, ambient_sender, receiver}/`
 
+- **`prototyping/now_ambient_sender/` and `prototyping/now_receiver_supabase/` are empty dirs.** The actual sketches live in `codes/testing/` only.
 - **Shared struct** (`EspNowPacket`): `uint8_t type` (0=accel, 1=ambient) + `float data[6]`
 - **MAC addresses:**
   - Accel sender: `E0:72:A1:72:22:94`
@@ -40,7 +44,7 @@ Sketches: `codes/prototyping/{accel_sender, ambient_sender, receiver}/`
 - **ESP-NOW receive callback must only set a flag** (`volatile bool newDataReady`). Processing runs in `loop()` — never in ISR.
 - Send rate: 3 seconds. Receiver prints both data streams to Serial.
 - Flash order (1 USB cable): flash senders first (unplug between), receiver last (keep plugged for serial monitoring).
-- See `codes/prototyping/PLAN.md` for full architecture.
+- See `codes/prototyping/PLAN.md` for full architecture. **Note:** PLAN.md lists an older receiver MAC (`0x14:63:93:8C:FC:78`); the code above is the source of truth.
 
 ### ESP-NOW — testing sketches
 
@@ -50,6 +54,7 @@ Sketches: `codes/prototyping/{accel_sender, ambient_sender, receiver}/`
 - Receiver MAC (older): `0x14:63:93:8C:FC:78`.
 - Supabase table: `readings`, columns: `temperature`, `humidity`, `counter`, `a_temp`, `b_temp`, `c_temp`.
 - Receiver WiFi credentials + Supabase URL/key hardcoded.
+- See `codes/codes_readme.md` for per-sketch details on all testing sketches.
 
 ### TFT display
 
@@ -88,17 +93,23 @@ thesis/
 │   │   ├── tft_complete/          # ST7789 TFT UI
 │   │   ├── libraries/             # Dependencies
 │   │   └── PLAN.md                # ESP-NOW architecture plan
-│   ├── testing/                   # 22 standalone component sketches
+│   ├── testing/                   # 23 standalone component sketches
 │   │   ├── now_ambient_sender/    # ESP-NOW sender (older, → Supabase)
 │   │   ├── now_receiver_supabase/ # ESP-NOW receiver → Supabase
+│   │   ├── mpu6050/               # MPU6050 basic test
 │   │   └── ...                    # BME280, probes, tft_*, supabase, etc.
 │   └── python/
 │       ├── machine learning/      # 6 classifiers + pre-processing/
 │       │   └── capture_mpu6050.py
-│       └── deep learning/
+│       └── deep learning/         # torch_version.py only (empty placeholder)
 ├── calibration/                   # MPU6050 raw CSV captures
 ├── designs/                       # TFT mockups, fonts, palette, logos
-└── schematics/                    # Fritzing .fzz files
+├── schematics/                    # Fritzing .fzz files
+├── documents/                     # Thesis chapter drafts + suggestion files
+├── scripts/                       # Google Docs API scripts (build roadmap/final docs)
+├── resources/                     # PDF references (ISLR, ML textbooks, etc.)
+├── suggestions/                   # Phase 1 suggestions
+└── thesis_roadmap.md              # Authoritative 10-phase project plan
 ```
 
 ## What is NOT here

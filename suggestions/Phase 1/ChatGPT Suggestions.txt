@@ -1,0 +1,484 @@
+# ChatGPT Suggestions
+
+## Thesis Review
+**Title:** *Development of a Predictive Maintenance Model for Coiled Evaporators in Split-Type Air Conditioning Systems*
+
+---
+
+# 1. Critique
+
+## Research Gap
+
+### Strength
+
+The reframed research gap is significantly stronger than the original proposal.
+
+Instead of arguing that scheduled preventive maintenance is insufficient, it identifies a more realistic operational problem:
+
+> Scheduled preventive maintenance exists, but maintenance personnel lack continuous information about which specific units begin to deteriorate between maintenance intervals.
+
+This shifts the study from attempting to replace preventive maintenance toward providing additional decision support, making the contribution much easier to defend.
+
+---
+
+### Potential Overclaim 1
+
+Current wording:
+
+> "...maintenance staff cannot identify which specific units are experiencing performance degradation between visits without physical disassembly."
+
+This statement is too absolute.
+
+Maintenance personnel may still detect degradation through:
+
+- Occupant complaints
+- Outlet air temperature measurements
+- Electrical measurements
+- Audible vibration
+- Visual inspection
+
+A safer wording would be:
+
+> "...maintenance personnel have limited ability to consistently identify early-stage performance degradation without additional inspection."
+
+or
+
+> "...cannot reliably identify early-stage degradation between scheduled maintenance visits."
+
+---
+
+### Potential Overclaim 2
+
+Current wording:
+
+> "...prototype for scalable localized predictive diagnostics."
+
+The study only develops one localized model.
+
+It does **not** evaluate scalability.
+
+A more accurate statement would be:
+
+> "...serves as a proof-of-concept for localized predictive diagnostic models."
+
+or
+
+> "...demonstrates the feasibility of developing localized predictive diagnostic models."
+
+---
+
+# 2. Research Questions
+
+## RQ1
+
+Current:
+
+> How effective are statistical feature selection and dimensionality reduction techniques...
+
+Feature selection and PCA answer different research questions.
+
+Feature selection identifies informative variables.
+
+PCA transforms variables into lower-dimensional representations.
+
+Consider separating the objectives:
+
+- Which non-invasive sensor features contribute most to distinguishing Normal and Abnormal units?
+- Can dimensionality reduction preserve classification performance while reducing feature dimensionality?
+
+---
+
+## RQ2
+
+Current:
+
+> Which classification model demonstrates the highest reliability...
+
+The word **reliability** is ambiguous.
+
+Specify the evaluation metric.
+
+Examples:
+
+- F1-score
+- Balanced Accuracy
+- MCC
+- Recall
+- ROC-AUC
+
+---
+
+## RQ3
+
+Current:
+
+> Does replacing raw environmental features with PMV improve classification?
+
+This is the weakest research question.
+
+PMV measures **occupant thermal comfort**, not equipment health.
+
+A stronger justification is needed.
+
+Instead:
+
+> Can PMV, as a thermodynamically derived composite variable, replace multiple environmental sensor measurements without reducing classification performance?
+
+This provides a clearer engineering rationale.
+
+---
+
+# 3. Hypotheses
+
+## H1
+
+Current:
+
+> At least one ML model achieves F1 ≥ 0.85.
+
+This is testable.
+
+However, the threshold requires justification.
+
+Explain why **0.85** was selected.
+
+Possible sources:
+
+- Previous literature
+- Engineering performance requirement
+- Similar predictive maintenance studies
+
+---
+
+## H2
+
+Current:
+
+> PCA-reduced features achieve comparable performance.
+
+"Comparable" is subjective.
+
+Instead define a non-inferiority margin.
+
+Example:
+
+> Performance differs by no more than 2% in F1-score.
+
+---
+
+## H3
+
+Current:
+
+> CNN outperforms tabular models by ≥2%.
+
+The **2%** threshold appears arbitrary.
+
+A better hypothesis would evaluate statistical significance instead.
+
+Example:
+
+> Integrating vibration spectrogram features significantly improves classification performance compared to tabular-only models.
+
+---
+
+## H4
+
+Current:
+
+> PMV does not significantly degrade classification performance.
+
+This is a strong hypothesis.
+
+It functions as a non-inferiority hypothesis and is appropriate if PMV is intended to simplify environmental sensing.
+
+---
+
+# 4. Methodological Loopholes
+
+## 4.1 Labeling Strategy
+
+This is the largest methodological concern.
+
+The proposal does not explain how **Normal** and **Abnormal** labels are assigned.
+
+Questions reviewers may ask:
+
+- Who determines the labels?
+- HVAC technician?
+- Maintenance office?
+- Manufacturer specifications?
+- Performance testing?
+- Cooling capacity measurements?
+- Visual inspection?
+
+Machine learning quality depends heavily on label quality.
+
+---
+
+## 4.2 Class Imbalance
+
+Abnormal units may be rare.
+
+Example:
+
+- 35 units
+- Only 5 abnormal
+
+This creates class imbalance.
+
+The proposal should discuss:
+
+- Class weighting
+- Balanced sampling
+- Stratified cross-validation
+- Oversampling techniques (when appropriate)
+
+---
+
+## 4.3 Weekly Sampling
+
+Weekly visits may miss transient failures.
+
+Example:
+
+- Monday: Healthy
+- Wednesday: Refrigerant leak
+- Friday: Repaired
+- Monday: Sample collected
+
+The failure is never observed.
+
+This limitation should be acknowledged.
+
+---
+
+## 4.4 Repeated Measurements
+
+Repeated measurements from the same unit are **not independent observations**.
+
+Example:
+
+- 30 AC units
+- 20 weeks
+- 600 observations
+
+This is **not** equivalent to 600 independent samples.
+
+Random train-test splitting would allow the model to memorize individual units.
+
+Instead, validation should use grouped methods such as:
+
+- Group K-Fold
+- Leave-One-Unit-Out Cross Validation
+
+This is one of the most important statistical concerns.
+
+---
+
+## 4.5 Ground Truth Drift
+
+Unit condition changes over time.
+
+Example:
+
+- Week 2: Normal
+- Week 10: Abnormal
+- Week 15: Repaired
+- Week 16: Normal
+
+The proposal should explain how changing labels will be handled.
+
+---
+
+## 4.6 Non-Invasive Constraint
+
+The system intentionally excludes internal measurements.
+
+Therefore it may not detect:
+
+- Coil fouling
+- Internal ice formation
+- Fin blockage
+- Internal refrigerant issues
+
+This limits the achievable classification performance.
+
+The proposal should explicitly recognize this limitation.
+
+---
+
+## 4.7 Localized Dataset
+
+Training exclusively on Xavier University data is a strength.
+
+However, it also limits generalizability.
+
+The proposal should clarify that the model is intended for localized deployment rather than universal application.
+
+---
+
+## 4.8 PMV Experiment
+
+PMV describes **human thermal comfort**, not evaporator health.
+
+The engineering rationale should explain why PMV is expected to retain information useful for machine classification.
+
+Otherwise reviewers may question its inclusion.
+
+---
+
+## 4.9 Portable Sensor Repeatability
+
+Portable sensor kits introduce measurement variability.
+
+Potential sources:
+
+- Probe placement
+- MPU6050 mounting position
+- Wire routing
+- Contact pressure
+
+A standardized installation protocol should be developed.
+
+---
+
+## 4.10 Vibration Spectrogram
+
+MPU6050 measurements may capture:
+
+- Compressor vibration
+- Fan vibration
+- Building vibration
+- Wall vibration
+
+Sensor placement should therefore be standardized to avoid learning installation artifacts instead of fault characteristics.
+
+---
+
+# 5. Strengths Compared to the Original Proposal
+
+## Non-invasive Design
+
+- Easier deployment
+- Easier ethics approval
+- Easier acceptance by facilities management
+
+---
+
+## Portable Sensor Kits
+
+- Lower cost
+- More feasible
+- More scalable
+
+---
+
+## Complementary Positioning
+
+The proposal no longer attempts to replace preventive maintenance.
+
+Instead, it prioritizes maintenance inspections.
+
+This is arguably the strongest conceptual improvement.
+
+---
+
+## Localized Dataset
+
+Using exclusively Xavier University data creates a realistic institutional model.
+
+Although less generalizable, it provides practical value for campus deployment.
+
+---
+
+## Mechanical Engineering Contribution
+
+The revised proposal emphasizes:
+
+- Thermal measurements
+- Electrical measurements
+- Vibration analysis
+- Engineering-derived variables (PMV)
+
+The work now appears rooted in Mechanical Engineering rather than simply applying machine learning.
+
+---
+
+## Clearer Scope
+
+The revised proposal is significantly more focused.
+
+It avoids attempting to simultaneously solve:
+
+- IoT deployment
+- Cloud systems
+- Computer vision
+- Predictive maintenance
+- Dashboards
+- Machine learning
+
+The scope is now much more appropriate for a bachelor's thesis.
+
+---
+
+# 6. Suggested Refinement of Research Questions
+
+## RQ1
+
+> Which non-invasive thermal, electrical, and vibration features contribute most to distinguishing Normal and Abnormal split-type air conditioning units, and can dimensionality reduction preserve classification performance while reducing feature dimensionality?
+
+---
+
+## RQ2
+
+> Which machine learning classifier achieves the highest classification performance for identifying Normal and Abnormal unit conditions using exclusively non-invasive sensor measurements?
+
+---
+
+## RQ3 (Conditional)
+
+> Can PMV, as a thermodynamically derived environmental feature, replace raw environmental sensor variables without significantly reducing classification performance?
+
+---
+
+# 7. Suggested Refinement of Hypotheses
+
+## H1
+
+> At least one classification model will achieve an F1-score of at least 0.85 in distinguishing Normal and Abnormal unit conditions.
+
+---
+
+## H2
+
+> Models trained using PCA-reduced features will achieve classification performance within a predefined non-inferiority margin (e.g., ≤2% difference in F1-score) relative to models trained on the full feature set.
+
+---
+
+## H3
+
+> Integrating vibration spectrogram features extracted from MPU6050 measurements with tabular sensor data will significantly improve classification performance compared with models trained using tabular features alone.
+
+---
+
+## H4
+
+> Replacing raw environmental measurements with PMV will not produce a statistically significant reduction in classification performance, indicating that PMV can serve as a compact engineering-derived environmental descriptor.
+
+---
+
+# Overall Assessment
+
+The revised proposal is substantially stronger than the original.
+
+The shift from proposing a replacement for preventive maintenance to a complementary maintenance triage tool makes the research more realistic, feasible, and easier to justify.
+
+The most significant remaining weaknesses are methodological rather than conceptual. These include:
+
+- A clearly defined labeling protocol for Normal and Abnormal units.
+- Appropriate handling of repeated measurements using grouped cross-validation.
+- A strategy for managing class imbalance.
+- A stronger engineering justification for the optional PMV experiment.
+
+Addressing these concerns would significantly improve the scientific rigor and credibility of the proposed study while maintaining a scope appropriate for a bachelor's thesis.
