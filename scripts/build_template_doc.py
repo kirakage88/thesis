@@ -572,7 +572,7 @@ builder.insert_table(
         ["Insufficient Abnormal data (0-3 natural faults)", "High", "High", "Unsupervised mitigates — fault injection provides guaranteed Abnormal samples"],
         ["Fault injection permission denied", "Medium", "High", "Engage PPO early; fallback to log validation + spot-checks"],
         ["Calibration equipment unavailable", "Low", "High", "Confirmed available — verify access Phase 1"],
-        ["DIY airflow sensor not ready (PMV)", "High", "Low", "Conditional — H4 and RQ3 drop silently"],
+        ["DIY airflow sensor not ready (PMV)", "High", "Low", "Conditional — H3 and RQ3 drop silently"],
         ["30-40 units overwhelm 2-kit rotation", "Medium", "Medium", "Start with 20 units, expand gradually"],
         ["Scope too large for 3 members", "Medium", "High", "Cut non-critical tasks; conditional experiments are optional"],
         ["Adviser requires major revision", "Medium", "Medium", "Incremental drafts per phase, not bulk submission"],

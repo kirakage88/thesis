@@ -325,7 +325,7 @@ b.text_table(
         ["Insufficient Abnormal data (0-3 natural faults in 6 months)", "High", "High", "Unsupervised does not need Abnormal labels. Fault injection provides guaranteed validation samples."],
         ["Fault injection permission denied by campus facilities", "Medium", "High", "Engage PPO early. Fallback: retrospective log validation + technician spot-checks."],
         ["Calibration equipment not available at XU labs", "Low", "High", "Confirmed available. Verify access during Phase 1."],
-        ["DIY airflow sensor not ready in time (PMV experiment)", "High", "Low", "Conditional — H4 and RQ3 drop silently if sensor fails. No impact on primary thesis."],
+        ["DIY airflow sensor not ready in time (PMV experiment)", "High", "Low", "Conditional — H3 and RQ3 drop silently if sensor fails. No impact on primary thesis."],
         ["30-40 units overwhelming for 2-kit weekly rotation", "Medium", "Medium", "Start with 20 units, expand as process stabilizes."],
         ["Scope too large for 3 members", "Medium", "High", "Cut non-critical tasks. Supervised experiment is conditional — no penalty if skipped."],
         ["Adviser feedback requires major revision", "Medium", "Medium", "Incremental drafts per phase, not one bulk submission."],

@@ -45,15 +45,37 @@ Predictive Maintenance (PdM), powered by AI/ML and IoT, provides a proactive sol
 
 ### Hypotheses
 
-<!-- JRP EDIT: New subsection added (roadmap lines 79-82) -->
+<!-- JRP EDIT: New subsection added. Each RQ has at least one hypothesis.
+     Tests explained:
+       - Mann-Whitney U (p<0.05): Are two groups' anomaly scores statistically different? Non-parametric.
+       - Paired bootstrap (p<0.05): Is adding a feature improving performance by more than random chance?
+       - TPR: True positive rate — raw proportion of injected faults caught.
+       - Within 3pp: Absolute performance margin check (<3 percentage points gap = negligible).
+       - McNemar's (p>0.05): Do two models on the same units disagree more than chance? p>0.05 = NO difference (what we want).
+       - Spearman's ρ (p>0.05): Rank correlation — does anomaly score move with a confound? p>0.05 = no correlation.
+       - ANOVA (p>0.05): Do mean anomaly scores differ across kit IDs? p>0.05 = kits measure consistently. -->
 
-- **H1:** At least one unsupervised model achieves anomaly score separation between known-fault and known-healthy units with p < 0.05 (Mann-Whitney U test) and true positive rate ≥ 80% on injected faults.
+#### RQ1 — Sensor measurement discriminatory power
 
-- **H2:** PCA-reduced features achieve anomaly detection performance within 3 percentage points of the full feature set AND show no statistically significant difference in unit-level anomaly ranking (p > 0.05, McNemar's test).
+- **H1a:** At least one sensor measurement group (supply-return temperature differential, compressor/fan current signatures, vibration spectral features) demonstrates statistically significant anomaly score separation between known-fault and known-healthy units (p < 0.05, Mann-Whitney U test). <!-- Plain: Can at least one type of measurement actually tell sick from healthy? If none separate the two groups, the system is dead on arrival. -->
 
-- **H3:** Vibration-derived features (spectrogram CNN output or statistical features) contribute statistically significant improvement to anomaly detection over sensor-only features (p < 0.05, paired bootstrap).
+- **H1b:** Vibration-derived features (spectrogram CNN output or statistical features) contribute statistically significant improvement to anomaly detection over temperature-and-electrical-only features (p < 0.05, paired bootstrap). <!-- Plain: Vibration adds something the other sensors can't. If performance is the same with or without vibration, the MPU6050 and CNN-spectrogram pipeline aren't worth the effort. -->
 
-- **H4 (conditional):** Replacing raw environmental features with PMV does not significantly degrade anomaly detection performance (within 3pp of raw-feature baseline) — demonstrating that an ME-derived composite metric is a viable alternative.
+#### RQ2 — Unsupervised model performance
+
+- **H2a:** At least one unsupervised model (Autoencoder, Isolation Forest, One-Class SVM, Gaussian Mixture Model) achieves anomaly score separation between known-fault and known-healthy units (p < 0.05, Mann-Whitney U test) AND true positive rate ≥ 80% on injected faults. <!-- Plain: At least one of the four models works — it separates scores for fault vs healthy, and catches ≥80% of the faults we deliberately create. -->
+
+- **H2b:** PCA-reduced features achieve anomaly detection performance within 3 percentage points of the full feature set AND show no statistically significant difference in unit-level anomaly ranking (p > 0.05, McNemar's test). <!-- Plain: Simplifying the features (squashing 9+ readings into fewer using PCA) doesn't break the model. "Within 3pp" = barely any gap. p>0.05 on McNemar = the two models agree; we want them to be equivalent. -->
+
+#### RQ3 — Composite thermal comfort metric (conditional)
+
+- **H3 (conditional):** Replacing raw environmental sensor features with a single PMV (Predicted Mean Vote) composite metric does not significantly degrade anomaly detection performance (within 3pp of raw-feature baseline). <!-- Plain: A single "comfort score" number can replace raw sensors without making the alarm worse. Conditional: only tested if the DIY airflow sensor is built. -->
+
+#### RQ4 — Generalization and confound verification
+
+- **H4a:** Anomaly score separation on held-out units (Leave-One-Unit-Out evaluation) remains within 5 percentage points of in-sample performance (McNemar's test, p > 0.05). <!-- Plain: The model works on units it has NEVER seen during training. If performance drops >5pp on new units, the model memorized the training units instead of learning general patterns. -->
+
+- **H4b:** Time-since-last-cleaning and ambient environmental variables (temperature, humidity) show no statistically significant correlation with anomaly score (p > 0.05, Spearman's ρ), and kit ID does not predict anomaly score (p > 0.05, ANOVA). <!-- Plain: The alarm isn't just detecting "this unit is dirty," "it's a hot day," or "different kit." If any of these correlate with the anomaly score, the system is detecting confounds, not faults. -->
 
 ---
 
