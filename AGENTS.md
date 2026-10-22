@@ -1,18 +1,23 @@
 # AGENTS.md
 
-Bachelor's thesis — Predictive Maintenance for Coiled Evaporators.
-ESP32 + sensors + ESP-NOW + TFT + Supabase + ML classification/unsupervised anomaly detection.
+Bachelor's thesis — Predictive Maintenance for Coiled Evaporators: ESP32-C3 + BME280/DS18B20/MPU6050 sensors, ESP-NOW, ST7789 TFT, Supabase, and ML.
 
-**Architecture decision (2026-07):** Unsupervised anomaly detection is the primary approach (not supervised classification). The 6 classifier scripts in `codes/python/machine learning/` are early experiments. See `thesis_roadmap.md` (779 lines) for the full 10-phase project plan, architecture rationale, and validation strategy. That file is the authoritative project plan — every task in this repo maps to it.
+**Architecture:** unsupervised anomaly detection is the primary approach; supervised classification is secondary/conditional. `thesis_roadmap.md` is the authoritative 10-phase plan. The six `0–5` classifiers in `codes/python/machine learning/` are Iris textbook exercises — no sensor-data or anomaly-detection pipeline is implemented yet.
+
+## Start here
+
+- No CI, tests, linter, formatter, or root package manager. Firmware verification is manual: compile/flash in Arduino IDE and watch Serial at 115200.
+- Docs drift from code: `README.md` and `codes/codes_readme.md` put `now_ambient_sender` and `now_receiver_supabase` under `prototyping/` (they only exist under `testing/`) and imply an integrated receiver → TFT → Supabase pipeline. `codes/prototyping/PLAN.md` has an old receiver MAC. Trust the `.ino` files.
+- Active firmware is three separate pieces: two senders + a serial-only receiver. `tft_complete` is a standalone TFT UI; ESP-NOW → Supabase upload exists only in the older `testing/now_receiver_supabase`.
 
 ## Firmware (Arduino / ESP32)
 
-- All sketches target **ESP32** (Arduino framework), opened via **Arduino IDE**.
-- **No build system.** Libraries live in `codes/prototyping/libraries/` and `codes/testing/libraries/` — copy or symlink into `Arduino/libraries/`.
-- Serial monitor baud: **115200** (set in every sketch).
-- BME280 I2C address: **`0x76`** (not the Adafruit default `0x77`).
+- Target **ESP32-C3 Super Mini**, opened in **Arduino IDE**. No PlatformIO/CLI build.
+- Requires ESP32 Arduino core **3.x**: the active senders/receiver use the newer `wifi_tx_info_t` / `esp_now_recv_info_t` callback signatures, so older cores won't compile them.
+- Libraries are vendored in `codes/prototyping/libraries/` and `codes/testing/libraries/` (near-duplicate snapshots); treat them as dependencies, not project code. Arduino resolves includes from the sketchbook, so copy or symlink the needed library into `Arduino/libraries/`.
+- Serial monitor **115200** for the active sketches; exceptions: `testing/BME280` (9600) and `testing/tft_custom_fonts` (250000). BME280 I2C address **`0x76`** (not Adafruit's default `0x77`). DS18B20 OneWire is **`ONE_WIRE_BUS 10`**; comments in `ambient_module_final` and `probes` say GPIO15, but the define is authoritative. Probe addresses are hardcoded in each sketch.
 
-### Calibration factors (duplicated across all sensor sketches)
+### Hardcoded calibration
 
 | Sensor | Formula |
 |--------|---------|
@@ -21,49 +26,32 @@ ESP32 + sensors + ESP-NOW + TFT + Supabase + ML classification/unsupervised anom
 | Probe A | `1.701471 + 0.984997 * raw` |
 | Probe B / C | `1.637417 + 0.9783362 * raw` |
 
-Probe A/B/C DeviceAddress arrays hardcoded in each sketch (OneWire GPIO10).
+MPU6050 biases from `calibration/mpu6050_raw_20260713_152545.csv`:
+`AX_BIAS = -0.005124`, `AY_BIAS = -0.265409`, `AZ_BIAS = 0.379842`.
 
-### MPU6050 calibration offsets (hardcoded in accel_sender)
+### ESP-NOW — active prototype (3 boards)
 
-From `calibration/mpu6050_raw_20260713_152545.csv`:
-```
-AX_BIAS = -0.005124, AY_BIAS = -0.265409, AZ_BIAS = 0.379842
-```
+- `codes/prototyping/{accel_sender, ambient_sender, receiver}/`; `ambient_module_final/` is the same sensors without wireless.
+- Shared struct (`EspNowPacket`): `uint8_t type` + `float data[6]`.
+  - `type=0` (accel): `data[0..2] = ax, ay, az`; rest zero.
+  - `type=1` (ambient): `data[0..5] = temp, humidity, counter, probeA, probeB, probeC`.
+- MACs: accel `E0:72:A1:72:22:94`, ambient `E0:72:A1:72:29:00`, receiver `E0:72:A1:6F:F8:6C`.
+- Senders scan for SSID `PLDTHOMEFIBRd2228` and set the WiFi channel, but `peerInfo.channel` is hardcoded to 11 — keep the `esp_wifi_set_channel()` value and `peerInfo.channel` aligned. Send every 3 s.
+- **Receive callback must stay minimal: copy the packet and set `volatile bool newDataReady`; parse/upload in `loop()`, never in the callback.**
+- If packets don't arrive, check channel alignment: the receiver never calls `esp_wifi_set_channel` (`peerInfo.channel = 0`), so it listens on whatever channel it booted with.
+- Flash order with one USB cable: accel sender, then ambient sender (unplug between), receiver last (leave connected for Serial).
 
-### ESP-NOW — prototyping system (3 boards)
+### ESP-NOW — older testing generation
 
-Sketches: `codes/prototyping/{accel_sender, ambient_sender, receiver}/`
+- `codes/testing/now_ambient_sender/` → `now_receiver_supabase/` uses the older `EspNowData` (no `type` field), receiver MAC `14:63:93:8C:FC:78`, and Supabase table `readings` (`temperature`, `humidity`, `counter`, `a_temp`, `b_temp`, `c_temp`).
+- Do not mix the two packet structs or MAC sets. The testing receiver has hardcoded WiFi/Supabase credentials — don't copy them into new files or paste them into logs.
 
-- **`prototyping/now_ambient_sender/` and `prototyping/now_receiver_supabase/` are empty dirs.** The actual sketches live in `codes/testing/` only.
-- **Shared struct** (`EspNowPacket`): `uint8_t type` (0=accel, 1=ambient) + `float data[6]`
-- **MAC addresses:**
-  - Accel sender: `E0:72:A1:72:22:94`
-  - Ambient sender: `E0:72:A1:72:29:00`
-  - Receiver: `E0:72:A1:6F:F8:6C`
-- Senders scan for SSID `PLDTHOMEFIBRd2228` for channel; hardcoded channel 11 as fallback.
-- **ESP-NOW receive callback must only set a flag** (`volatile bool newDataReady`). Processing runs in `loop()` — never in ISR.
-- Send rate: 3 seconds. Receiver prints both data streams to Serial.
-- Flash order (1 USB cable): flash senders first (unplug between), receiver last (keep plugged for serial monitoring).
-- See `codes/prototyping/PLAN.md` for full architecture. **Note:** PLAN.md lists an older receiver MAC (`0x14:63:93:8C:FC:78`); the code above is the source of truth.
+### TFT
 
-### ESP-NOW — testing sketches
-
-`codes/testing/now_ambient_sender/` → `codes/testing/now_receiver_supabase/`
-
-- Uses older `EspNowData` struct (`temp`, `humid`, `counter`, `a_temp`, `b_temp`, `c_temp`) — no `type` field.
-- Receiver MAC (older): `0x14:63:93:8C:FC:78`.
-- Supabase table: `readings`, columns: `temperature`, `humidity`, `counter`, `a_temp`, `b_temp`, `c_temp`.
-- Receiver WiFi credentials + Supabase URL/key hardcoded.
-- See `codes/codes_readme.md` for per-sketch details on all testing sketches.
-
-### TFT display
-
-Sketch: `codes/prototyping/tft_complete/` (ST7789 240×320, SPI)
-
-- Touch: XPT2046 (shared SPI CLK). Full pinout in `designs/tft_display/design_readme.md` — set in TFT_eSPI `User_Setup.h`.
-- **No runtime image decoder.** Convert PNG/JPG to RGB565 PROGMEM arrays (`pushImage`).
-- Fonts: VLW format, stored as `.h` PROGMEM arrays in `fonts/`, loaded via `loadFont()`.
-- Color palette: `#define` macros in the sketch (light/dark Iron Grey modes).
+- `codes/prototyping/tft_complete/` is a multi-file sketch: `.ino` + `helper_functions.*` + `assets/` (RGB565) + `fonts/` (VLW).
+- Documented panel is **ST7789 240×320**; touch is **XPT2046**. Pinout: TFT CS 7, RST 3, DC 2, MOSI 6, SCK 4, MISO 5; touch CS 8 (full table in `designs/tft_display/design_readme.md`).
+- The vendored `libraries/TFT_eSPI/User_Setup.h` is still the stock ILI9341/ESP8266 default — don't use it to infer project driver/pins. If the display is wrong, check the `User_Setup.h` in the library copy Arduino actually compiles.
+- No runtime image decoder: convert images to RGB565 PROGMEM arrays (`pushImage`). Fonts are VLW `.h` PROGMEM arrays loaded with `loadFont()`.
 
 ## Python
 
@@ -74,46 +62,22 @@ python -m venv .venv
 pip install -r ../requirements.txt
 ```
 
-- Requires **Python 3.11+**; deps pinned in `codes/python/requirements.txt` (numpy, matplotlib, scikit-learn, pandas, pyserial, torch). CUDA torch is unused by current scripts.
-- `helper.py` provides `plot_decision_regions()` shared by all 6 classifier scripts (0–5).
-- `capture_mpu6050.py` — serial capture tool for MPU6050 calibration: collects 200 raw samples, saves to timestamped CSV, prints calibration results.
-- `pre-processing/` has 3 scripts (`6 missing values.py`, `7 handling_categorical.py`, `8 feature_extraction`).
+- Python **3.11+**. `codes/python/requirements.txt` pins numpy/matplotlib/scikit-learn/pandas/pyserial/torch. torch is only used by `deep learning/torch_version.py` (a CUDA check); the classifiers don't need it, so a lighter `pip install numpy matplotlib scikit-learn pandas` is enough for them.
+- Scripts `0–5` are sklearn **Iris** exercises; `pre-processing/6–8` use synthetic/wine data. None read ESP32/sensor data. All classifier scripts call `plt.show()`, so don't run them as a headless verification step.
+- `helper.py` provides the shared `plot_decision_regions()`.
+- `capture_mpu6050.py`: run alongside the `prototyping/mpu6050_calibration` sketch; it waits for the `ax_raw,...` header, captures 200 samples, and writes `mpu6050_raw_<timestamp>.csv` **to the current directory** — run it from `calibration/` if that's where you want the file.
+- `pre-processing/8 feature_extraction` has no `.py` extension and imports `tabulate`, which is not pinned in `requirements.txt`.
 
-## Structure
+## Google Docs scripts
 
-```
-thesis/
-├── codes/
-│   ├── prototyping/               # Final + ESP-NOW sketches
-│   │   ├── accel_sender/          # MPU6050 → ESP-NOW (type=0)
-│   │   ├── ambient_sender/        # BME280+DS18B20 → ESP-NOW (type=1)
-│   │   ├── receiver/              # Receives both → Serial
-│   │   ├── ambient_module_final/  # BME280 + 3×DS18B20 (sensor-only, no wireless)
-│   │   ├── mpu6050_calibration/   # MPU6050 bias calibration
-│   │   ├── tft_complete/          # ST7789 TFT UI
-│   │   ├── libraries/             # Dependencies
-│   │   └── PLAN.md                # ESP-NOW architecture plan
-│   ├── testing/                   # 23 standalone component sketches
-│   │   ├── now_ambient_sender/    # ESP-NOW sender (older, → Supabase)
-│   │   ├── now_receiver_supabase/ # ESP-NOW receiver → Supabase
-│   │   ├── mpu6050/               # MPU6050 basic test
-│   │   └── ...                    # BME280, probes, tft_*, supabase, etc.
-│   └── python/
-│       ├── machine learning/      # 6 classifiers + pre-processing/
-│       │   └── capture_mpu6050.py
-│       └── deep learning/         # torch_version.py only (empty placeholder)
-├── calibration/                   # MPU6050 raw CSV captures
-├── designs/                       # TFT mockups, fonts, palette, logos
-├── schematics/                    # Fritzing .fzz files
-├── documents/                     # Thesis chapter drafts + suggestion files
-├── scripts/                       # Google Docs API scripts (build roadmap/final docs)
-├── resources/                     # PDF references (ISLR, ML textbooks, etc.)
-├── suggestions/                   # Phase 1 suggestions
-└── thesis_roadmap.md              # Authoritative 10-phase project plan
-```
+`scripts/*.py` are one-off Google Docs publishers, not part of the firmware/ML workflow. They hardcode the old path `D:/School/1 Projects/thesis/...` and load an OAuth token from `~/AppData/Local/hermes/google_token.json`; their Google API dependencies are not in `requirements.txt`. Don't run or fix them unless the task is about the docs pipeline.
 
-## What is NOT here
+## Layout
 
-- CI/CD, linters, formatters, type checkers, test frameworks.
-- Root `.gitignore` (only `codes/python/machine learning/.gitignore` exists).
-- Package manager config at repo root.
+- `codes/prototyping/` — active 3-board firmware + `tft_complete/`.
+- `codes/testing/` — per-component sketches (BME280, probes, MPU6050, TFT, ESP-NOW, Supabase).
+- `codes/python/` — ML exercises; `deep learning/torch_version.py` is a CUDA check only.
+- `calibration/` — MPU6050 raw capture.
+- `designs/tft_display/` — TFT mockups/pinout; `schematics/` — Fritzing/KiCad.
+- `documents/draft/` — working chapter drafts; `documents/original/` — baseline copies; `documents/suggestions/` — review notes.
+- `thesis_roadmap.md` — authoritative plan.

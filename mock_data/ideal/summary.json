@@ -1,0 +1,20 @@
+{
+  "scenario": "ideal",
+  "n_healthy_units": 35,
+  "n_injected_units": 2,
+  "n_total_units": 37,
+  "visits_per_unit": 6,
+  "trials_per_visit": 10,
+  "windows_per_trial": 6,
+  "pairs_per_fault": 10,
+  "healthy_windows": 12600,
+  "injected_windows": 1080,
+  "total_windows": 13680,
+  "healthy_trials": 2100,
+  "injection_trials": 180,
+  "total_trials": 2280,
+  "h1a_prepost_trials": 120,
+  "h1a_pair_rows": 240,
+  "h1a_tests_total": 24,
+  "h1a_tests_per_unit": 12
+}
