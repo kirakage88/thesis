@@ -9,6 +9,7 @@ Bachelor's thesis — Predictive Maintenance for Coiled Evaporators: ESP32-C3 + 
 - No CI, tests, linter, formatter, or root package manager. Firmware verification is manual: compile/flash in Arduino IDE and watch Serial at 115200.
 - Docs drift from code: `README.md` and `codes/codes_readme.md` put `now_ambient_sender` and `now_receiver_supabase` under `prototyping/` (they only exist under `testing/`) and imply an integrated receiver → TFT → Supabase pipeline. `codes/prototyping/PLAN.md` has an old receiver MAC. Trust the `.ino` files.
 - Active firmware is three separate pieces: two senders + a serial-only receiver. `tft_complete` is a standalone TFT UI; ESP-NOW → Supabase upload exists only in the older `testing/now_receiver_supabase`.
+- `mock_data/` is a synthetic H1 fixture and is intentionally unchanged for now; it still uses the old schema (`pressure`, `setpoint`, `voltage`, `power`, 4 sensor groups, 8 minimum pairs), and its ambient scores were computed with pressure. Ignore the old columns and group count until it is regenerated.
 
 ## Firmware (Arduino / ESP32)
 
@@ -16,6 +17,7 @@ Bachelor's thesis — Predictive Maintenance for Coiled Evaporators: ESP32-C3 + 
 - Requires ESP32 Arduino core **3.x**: the active senders/receiver use the newer `wifi_tx_info_t` / `esp_now_recv_info_t` callback signatures, so older cores won't compile them.
 - Libraries are vendored in `codes/prototyping/libraries/` and `codes/testing/libraries/` (near-duplicate snapshots); treat them as dependencies, not project code. Arduino resolves includes from the sketchbook, so copy or symlink the needed library into `Arduino/libraries/`.
 - Serial monitor **115200** for the active sketches; exceptions: `testing/BME280` (9600) and `testing/tft_custom_fonts` (250000). BME280 I2C address **`0x76`** (not Adafruit's default `0x77`). DS18B20 OneWire is **`ONE_WIRE_BUS 10`**; comments in `ambient_module_final` and `probes` say GPIO15, but the define is authoritative. Probe addresses are hardcoded in each sketch.
+- **Prioritize this in any firmware work:** do **not** add BME280 barometric `pressure` or voltage/power features to Serial/CSV/ESP-NOW payloads. Analysis is current-only: ambient temperature + humidity, inlet/outlet/coil temperatures, current, vibration, and airflow. `setpoint` may be logged as metadata for pre/post pair matching, but it is not a model feature. Existing sketches may still print pressure or voltage until updated.
 
 ### Hardcoded calibration
 

@@ -1,0 +1,2 @@
+n_samples,duration_s,sampling_hz,current_mean,current_std,current_min,current_max,current_median,current_rms,current_slope_a_per_s,current_range,current_first,current_last
+100,10.0,10,4.9782,0.0966,4.7977,5.1694,4.9961,4.9792,-0.007244,0.3717,5.0,4.859
